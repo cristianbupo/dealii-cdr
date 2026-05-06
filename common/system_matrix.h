@@ -4,7 +4,7 @@
 
 #include <deal.II/dofs/dof_handler.h>
 
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include "parameters.h"
 
@@ -28,7 +28,7 @@ namespace CDR
    const std::function<std::array<double, dim>(Point<dim>)> &convection_function,
    const CDR::Parameters                                    &parameters,
    const double                                             &time_step,
-   const ConstraintMatrix                                   &constraints,
+   const AffineConstraints<double>                                   &constraints,
    Matrix                                                   &system_matrix);
 }
 #endif

@@ -17,7 +17,7 @@ namespace CDR
      const std::function<double(double, Point<2>)>        &forcing_function,
      const CDR::Parameters                                &parameters,
      const Vector<double>                                 &current_solution,
-     const ConstraintMatrix                               &constraints,
+     const AffineConstraints<double>                               &constraints,
      const double                                         current_time,
      SparseMatrix<double>                                 &system_matrix,
      Vector<double>                                       &system_rhs);
@@ -30,7 +30,7 @@ namespace CDR
      const std::function<double(double, Point<3>)>        &forcing_function,
      const CDR::Parameters                                &parameters,
      const Vector<double>                                 &current_solution,
-     const ConstraintMatrix                               &constraints,
+     const AffineConstraints<double>                               &constraints,
      const double                                         current_time,
      SparseMatrix<double>                                 &system_matrix,
      Vector<double>                                       &system_rhs);
@@ -44,7 +44,7 @@ namespace CDR
    const std::function<double(double, Point<2>)>        &forcing_function,
    const CDR::Parameters                                &parameters,
    const TrilinosWrappers::MPI::Vector                  &current_solution,
-   const ConstraintMatrix                               &constraints,
+   const AffineConstraints<double>                               &constraints,
    const double                                         current_time,
    TrilinosWrappers::SparseMatrix                       &system_matrix,
    TrilinosWrappers::MPI::Vector                        &system_rhs);
@@ -58,7 +58,7 @@ namespace CDR
    const std::function<double(double, Point<3>)>        &forcing_function,
    const CDR::Parameters                                &parameters,
    const TrilinosWrappers::MPI::Vector                  &current_solution,
-   const ConstraintMatrix                               &constraints,
+   const AffineConstraints<double>                               &constraints,
    const double                                         current_time,
    TrilinosWrappers::SparseMatrix                       &system_matrix,
    TrilinosWrappers::MPI::Vector                        &system_rhs);

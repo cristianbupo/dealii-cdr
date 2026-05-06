@@ -11,7 +11,7 @@
 #include <deal.II/grid/manifold_lib.h>
 
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include <deal.II/numerics/matrix_tools.h>
 
@@ -73,7 +73,7 @@ private:
   IndexSet locally_owned_dofs;
   IndexSet locally_relevant_dofs;
 
-  ConstraintMatrix constraints;
+  AffineConstraints<double> constraints;
 
   TrilinosWrappers::MPI::Vector locally_relevant_solution;
   TrilinosWrappers::MPI::Vector system_rhs;
@@ -124,7 +124,8 @@ void CDRProblem<dim>::setup_geometry()
       cell->set_all_manifold_ids(0);
     }
   triangulation.refine_global(parameters.refinement_level);
-  dof_handler.initialize(triangulation, fe);
+  dof_handler.reinit(triangulation);
+  dof_handler.distribute_dofs(fe);
   locally_owned_dofs = dof_handler.locally_owned_dofs();
   DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 
@@ -146,7 +147,7 @@ void CDRProblem<dim>::setup_matrices()
   constraints.clear();
   constraints.reinit(locally_relevant_dofs);
   DoFTools::make_hanging_node_constraints(dof_handler, constraints);
-  VectorTools::interpolate_boundary_values(dof_handler, 0, ZeroFunction<dim>(),
+  VectorTools::interpolate_boundary_values(dof_handler, 0, Functions::ZeroFunction<dim>(),
                                            constraints);
   constraints.close();
 
@@ -154,7 +155,7 @@ void CDRProblem<dim>::setup_matrices()
   DoFTools::make_sparsity_pattern(dof_handler, dynamic_sparsity_pattern,
                                   constraints, false);
   SparsityTools::distribute_sparsity_pattern
-    (dynamic_sparsity_pattern, dof_handler.n_locally_owned_dofs_per_processor(),
+    (dynamic_sparsity_pattern, locally_owned_dofs,
      mpi_communicator, locally_relevant_dofs);
 
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
@@ -191,7 +192,7 @@ void CDRProblem<dim>::time_iterate()
                                    1e-6*system_rhs.l2_norm(),
                                    /*log_history = */ false,
                                    /*log_result = */ false);
-      TrilinosWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+      TrilinosWrappers::SolverGMRES solver(solver_control);
       solver.solve(system_matrix, completely_distributed_solution, system_rhs,
                    preconditioner);
       constraints.distribute(completely_distributed_solution);

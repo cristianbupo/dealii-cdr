@@ -12,7 +12,7 @@
 #include <deal.II/grid/manifold_lib.h>
 
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/matrix_tools.h>
@@ -74,7 +74,7 @@ private:
   IndexSet locally_owned_dofs;
   IndexSet locally_relevant_dofs;
 
-  ConstraintMatrix constraints;
+  AffineConstraints<double> constraints;
   bool first_run;
   TrilinosWrappers::MPI::Vector locally_relevant_solution;
   TrilinosWrappers::MPI::Vector completely_distributed_solution;
@@ -168,11 +168,11 @@ void CDRProblem<dim>::setup_dofs()
 template<int dim>
 void CDRProblem<dim>::setup_system()
 {
-  DynamicSparsityPattern dynamic_sparsity_pattern(dof_handler.n_dofs());
+  DynamicSparsityPattern dynamic_sparsity_pattern(locally_relevant_dofs);
   DoFTools::make_sparsity_pattern(dof_handler, dynamic_sparsity_pattern,
                                   constraints, /*keep_constrained_dofs*/true);
   SparsityTools::distribute_sparsity_pattern
-    (dynamic_sparsity_pattern, dof_handler.n_locally_owned_dofs_per_processor(),
+    (dynamic_sparsity_pattern, locally_owned_dofs,
      mpi_communicator, locally_relevant_dofs);
 
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);
@@ -208,7 +208,7 @@ void CDRProblem<dim>::time_iterate()
                                    1e-6*system_rhs.l2_norm(),
                                    /*log_history = */ false,
                                    /*log_result = */ false);
-      TrilinosWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+      TrilinosWrappers::SolverGMRES solver(solver_control);
       solver.solve(system_matrix, completely_distributed_solution, system_rhs,
                    preconditioner);
       constraints.distribute(completely_distributed_solution);
@@ -233,7 +233,7 @@ void CDRProblem<dim>::refine_mesh()
 
   Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
   KellyErrorEstimator<dim>::estimate
-    (dof_handler, QGauss<dim - 1>(fe.degree + 1), typename FunctionMap<dim>::type(),
+    (dof_handler, QGauss<dim - 1>(fe.degree + 1), std::map<types::boundary_id, const Function<dim>*>{},
      locally_relevant_solution, estimated_error_per_cell);
 
   // Poor man's version of refine and coarsen

@@ -78,7 +78,7 @@ namespace CDR
    const std::function<std::array<double, dim>(Point<dim>)> &convection_function,
    const CDR::Parameters                                    &parameters,
    const double                                             &time_step,
-   const ConstraintMatrix                                   &constraints,
+   const AffineConstraints<double>                                   &constraints,
    Matrix                                                   &system_matrix)
   {
     internal_create_system_matrix<dim>

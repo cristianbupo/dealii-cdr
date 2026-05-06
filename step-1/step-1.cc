@@ -54,7 +54,7 @@ private:
   const std::function<std::array<double, dim>(Point<dim>)> convection_function;
   const std::function<double(double, Point<dim>)> forcing_function;
 
-  ConstraintMatrix constraints;
+  AffineConstraints<double> constraints;
   SparseMatrix<double> system_matrix;
   SparseILU<double> preconditioner;
 
@@ -95,7 +95,8 @@ void CDRProblem<dim>::setup_geometry()
       cell->set_all_manifold_ids(0);
     }
   triangulation.refine_global(parameters.refinement_level);
-  dof_handler.initialize(triangulation, fe);
+  dof_handler.reinit(triangulation);
+  dof_handler.distribute_dofs(fe);
   std::cout << "number of DoFs: " << dof_handler.n_dofs() << std::endl;
 }
 
@@ -103,7 +104,7 @@ void CDRProblem<dim>::setup_geometry()
 template<int dim>
 void CDRProblem<dim>::setup_matrices()
 {
-  VectorTools::interpolate_boundary_values(dof_handler, 0, ZeroFunction<dim>(),
+  VectorTools::interpolate_boundary_values(dof_handler, 0, Functions::ZeroFunction<dim>(),
                                            constraints);
   constraints.close();
   {

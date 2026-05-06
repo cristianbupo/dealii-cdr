@@ -58,7 +58,7 @@ namespace CDR
     {
       std::ifstream file(file_name);
       configure_parameter_handler(parameter_handler);
-      parameter_handler.read_input(file);
+      parameter_handler.parse_input(file);
     }
 
     inner_radius = parameter_handler.get_double("inner_radius");

@@ -27,17 +27,17 @@ namespace CDR
     data_out.attach_dof_handler(dof_handler);
     data_out.add_data_vector(solution, "u");
 
-    Vector<float> subdomain (dof_handler.get_tria().n_active_cells());
+    Vector<float> subdomain (dof_handler.get_triangulation().n_active_cells());
     for (auto &domain : subdomain)
       {
-        domain = dof_handler.get_tria().locally_owned_subdomain();
+        domain = dof_handler.get_triangulation().locally_owned_subdomain();
       }
     data_out.add_data_vector(subdomain, "subdomain");
     data_out.build_patches(patch_level);
 
     DataOutBase::VtkFlags flags;
     flags.time = current_time;
-    flags.compression_level = DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
+    flags.compression_level = DataOutBase::CompressionLevel::best_speed;
     data_out.set_flags(flags);
 
     unsigned int subdomain_n;
@@ -47,7 +47,7 @@ namespace CDR
       }
     else
       {
-        subdomain_n = dof_handler.get_tria().locally_owned_subdomain();
+        subdomain_n = dof_handler.get_triangulation().locally_owned_subdomain();
       }
 
     std::ofstream output

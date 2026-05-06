@@ -56,7 +56,7 @@ private:
   const std::function<std::array<double, dim>(Point<dim>)> convection_function;
   const std::function<double(double, Point<dim>)> forcing_function;
 
-  ConstraintMatrix constraints;
+  AffineConstraints<double> constraints;
   SparseMatrix<double> system_matrix;
   Vector<double> system_rhs;
   Vector<double> current_solution;
@@ -102,7 +102,8 @@ void CDRProblem<dim>::setup_geometry()
       cell->set_all_manifold_ids(manifold_id);
     }
   triangulation.refine_global(parameters.refinement_level);
-  dof_handler.initialize(triangulation, fe);
+  dof_handler.reinit(triangulation);
+  dof_handler.distribute_dofs(fe);
 
   // This must be done here so that the vector is the correct size when
   // entering setup_system. During time iteration refine_mesh will resize
@@ -184,7 +185,7 @@ void CDRProblem<dim>::refine_mesh()
 
   Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
   KellyErrorEstimator<dim>::estimate
-    (dof_handler, QGauss<dim - 1>(fe.degree + 1), typename FunctionMap<dim>::type(),
+    (dof_handler, QGauss<dim - 1>(fe.degree + 1), std::map<types::boundary_id, const Function<dim>*>{},
      current_solution, estimated_error_per_cell);
   GridRefinement::refine(triangulation, estimated_error_per_cell, 1e-3);
   GridRefinement::coarsen(triangulation, estimated_error_per_cell, 5e-4);
@@ -199,7 +200,7 @@ void CDRProblem<dim>::refine_mesh()
         }
     }
 
-  Vector<double> unrefined_current_solution {current_solution};
+  Vector<double> unrefined_current_solution(current_solution);
 
   triangulation.prepare_coarsening_and_refinement();
   solution_transfer.prepare_for_coarsening_and_refinement(unrefined_current_solution);
@@ -207,7 +208,7 @@ void CDRProblem<dim>::refine_mesh()
   triangulation.execute_coarsening_and_refinement();
   setup_dof_handler();
   current_solution.reinit(dof_handler.n_dofs());
-  solution_transfer.interpolate(unrefined_current_solution, current_solution);
+  solution_transfer.interpolate(current_solution);
 
   constraints.distribute(current_solution);
   setup_system();
